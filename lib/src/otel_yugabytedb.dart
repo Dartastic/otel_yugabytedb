@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_yugabytedb_suppression.dart';
 
@@ -54,51 +53,65 @@ Future<T> tracedYugabyteDB<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_yugabytedb');
   final span = t.startSpan('yugabytedb $operation', kind: SpanKind.client);
   try {
-    span.setStringAttribute('db.system.name', 'yugabytedb');
+    span.addAttributes(OTel.attributes(
+        [OTel.attributeString('db.system.name', 'yugabytedb')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.universe != null) {
-        span.setStringAttribute('yugabyte.universe', res.universe!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('yugabyte.universe', res.universe!)]));
       }
       if (res.database != null) {
-        span.setStringAttribute('db.namespace', res.database!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('db.namespace', res.database!)]));
       }
       if (res.schema != null) {
-        span.setStringAttribute('db.schema', res.schema!);
+        span.addAttributes(
+            OTel.attributes([OTel.attributeString('db.schema', res.schema!)]));
       }
       if (res.table != null) {
-        span.setStringAttribute('db.collection.name', res.table!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('db.collection.name', res.table!)]));
       }
       if (res.api != null) {
-        span.setStringAttribute('yugabyte.api', res.api!);
+        span.addAttributes(
+            OTel.attributes([OTel.attributeString('yugabyte.api', res.api!)]));
       }
       if (res.statementType != null) {
-        span.setStringAttribute('db.operation.name', res.statementType!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('db.operation.name', res.statementType!)]));
       }
       if (res.queryText != null) {
-        span.setStringAttribute('db.query.text', res.queryText!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('db.query.text', res.queryText!)]));
       }
       if (res.rowsAffected != null) {
-        span.setIntAttribute('db.response.returned_rows', res.rowsAffected!);
+        span.addAttributes(OTel.attributes([
+          OTel.attributeInt('db.response.returned_rows', res.rowsAffected!)
+        ]));
       }
       if (res.region != null) {
-        span.setStringAttribute('cloud.region', res.region!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('cloud.region', res.region!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('yugabytedb.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('yugabytedb.error.code', res.errorCode!)]));
       }
-      final fail =
-          res.errorCode != null ||
+      final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-          ErrorResource.errorType.key,
-          res.errorCode ?? 'yugabyte.error',
-        );
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+            ErrorResource.errorType.key,
+            res.errorCode ?? 'yugabyte.error',
+          )
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
